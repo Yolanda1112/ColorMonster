@@ -4,30 +4,24 @@ using UnityEngine;
 
 public class BackGroundController : MonoBehaviour
 {
-    [SerializeField] private float _moveSpeed = 3.0f;
-    [SerializeField] private Transform _target;
-    private Vector3 startPosition;
-    void Start()
-    {
-        startPosition = transform.position;
-    }
+    [SerializeField] private float moveSpeed = 3.0f;
+    private const float BACKGROUND_LENGTH = 30.0f;
 
     void Update()
     {
-        transform.position = Vector3.MoveTowards(
-        transform.position, _target.position, Time.deltaTime * _moveSpeed
-        );
+        // Z方向に流す（手前方向）
+        transform.Translate(0f, 0f, -moveSpeed * Time.deltaTime);
 
-        ResetPositon();
+        // Zが -30 を超えたら後ろに回す
+        if (transform.position.z <= -BACKGROUND_LENGTH)
+        {
+            MoveToBack();
+        }
     }
 
-    private void ResetPositon()
+    private void MoveToBack()
     {
-        float distance = Vector3.Distance(transform.position, _target.position);
-
-        if(distance == 0)
-        {
-            transform.position = startPosition;
-        }
+        // 2枚分（30 × 2）後ろへ移動
+        transform.position += new Vector3(0f, 0f, BACKGROUND_LENGTH * 2f);
     }
 }
