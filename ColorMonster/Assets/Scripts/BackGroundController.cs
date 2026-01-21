@@ -5,10 +5,12 @@ using UnityEngine;
 public class BackGroundController : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 3.0f;
+    [SerializeField] private float accel = 0.2f;   // 加速量
     private const float BACKGROUND_LENGTH = 30.0f;
 
     void Update()
     {
+
         // Z方向に流す（手前方向）
         transform.Translate(0f, 0f, -moveSpeed * Time.deltaTime);
 
@@ -21,7 +23,7 @@ public class BackGroundController : MonoBehaviour
 
     private void MoveToBack()
     {
-        // 2枚分（30 × 2）後ろへ移動
+        // 2枚後ろへ移動
         transform.position += new Vector3(0f, 0f, BACKGROUND_LENGTH * 2f);
     }
 }

@@ -148,13 +148,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ae3a93bf2189984bad9320fadf3627d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _moveSpeed: 3
-  _target: {fileID: 1735468922539358571, guid: 884b42f4d5be08a4288ea6fd317e59f5, type: 3}
-  _enemyColor: yellow
-  _colorList:
-  - red
-  - blue
-  - yellow
-  - purple
-  - orange
-  - green
+  moveSpeed: 2
