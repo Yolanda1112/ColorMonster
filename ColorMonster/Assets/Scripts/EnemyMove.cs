@@ -40,6 +40,7 @@ public class EnemyMove : MonoBehaviour
         // 前進
         rb.MovePosition(rb.position + dir * moveSpeed * Time.fixedDeltaTime);
 
+
         //通り越したらばいばい
         if (transform.position.z < target.position.z)
         {
