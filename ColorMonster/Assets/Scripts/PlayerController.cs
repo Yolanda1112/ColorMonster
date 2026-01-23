@@ -58,6 +58,11 @@ public class PlayerController : MonoBehaviour
         return attackColor;
     }
 
+    public void SetAttackColorExternal(int idx)
+    {
+    attackColor = idx;
+    }
+
     public void RsetAttackColor()
     {
         attackColor = -1;
