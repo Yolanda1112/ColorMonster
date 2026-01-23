@@ -18,6 +18,10 @@
 // 注意:
 //  - COMポートは「同時に複数スクリプトでOpenできない」ので、SerialPortを開くスクリプトはこれ1つにする
 //  - PlayerController に public void SetAttackColorExternal(int idx) が必要（private attackColor を外部から変えるため）
+//
+// 追加（可視化のためのデバッグ情報）:
+//  - DebugChannels[0..3] に各chの最新値・単色判定・最終判定を入れる
+//    → UI(HUD)側はこの配列を読むだけで「生RGB」と「判定色」を表示できる
 
 using System;
 using System.Collections.Concurrent;
@@ -61,13 +65,11 @@ public class ColorSensorToPlayerController : MonoBehaviour
     // ある程度より小さいときは判定しない（None）
     [SerializeField] private int minClear = 10;
 
-    [Header("Classification Thresholds (tune)")]
-    // RGBの正規化値で「何色っぽいか」を判定する閾値
-    // 現場ではここは調整ポイント（カードの材質/LED/環境光で変わる）
-    [SerializeField] private float redDominantMin = 0.55f;
-    [SerializeField] private float blueDominantMin = 0.50f;
-    [SerializeField] private float yellowRGMin = 0.35f;
-    [SerializeField] private float yellowBMax = 0.25f;
+    [Header("RAW Thresholds (simple)")]
+    [SerializeField] private int rawRedMin = 100;
+    [SerializeField] private int rawBlueMin = 100;
+    [SerializeField] private int rawYellowRMin = 100;
+    [SerializeField] private int rawYellowGMin = 220;
 
     [Header("Stability")]
     // 判定がフラフラするとゲームが暴れるので「安定化」させる
@@ -76,6 +78,29 @@ public class ColorSensorToPlayerController : MonoBehaviour
 
     // 確定を連打しないためのクールダウン（ms）
     [SerializeField] private int applyCooldownMs = 120;
+
+    // =========================
+    // 可視化のための公開デバッグ情報
+    // =========================
+    //
+    // HUD側（Canvas上のUIなど）は、この DebugChannels を読むだけで
+    //  - 生RGB（raw）
+    //  - chごとの単色判定（base）
+    //  - 全chを統合した最終判定（final）
+    // をゲーム画面上に出せる
+    //
+    [System.Serializable]
+    public struct ChannelDebug
+    {
+        public bool hasData;      // そのchに「最近のデータ」があるか
+        public int r, g, b, c;    // 生値
+        public string baseColor;  // "red/blue/yellow/none"
+        public string finalColor; // "red/blue/yellow/purple/orange/green/none"
+    }
+
+    // 外部（HUDスクリプトなど）から読むためのプロパティ
+    // 配列サイズは常に 4 に固定（ch0..ch3想定）※maxChannelsが小さくても4を返す
+    public ChannelDebug[] DebugChannels { get; private set; } = new ChannelDebug[4];
 
     // =========================
     // シリアル受信のための内部状態
@@ -130,8 +155,22 @@ public class ColorSensorToPlayerController : MonoBehaviour
         // playerがInspectorで指定されてない場合はシーンから探す（保険）
         if (player == null) player = FindObjectOfType<PlayerController>();
 
-        // 最新サンプル配列を初期化
-        _latest = new Sample[Mathf.Max(1, maxChannels)];
+        // 最新サンプル配列を初期化（0除け）
+        int n = Mathf.Clamp(maxChannels, 1, 4);
+        _latest = new Sample[n];
+
+        // DebugChannelsも初期化（HUDが読むので常に4要素）
+        DebugChannels = new ChannelDebug[4];
+        for (int i = 0; i < DebugChannels.Length; i++)
+        {
+            DebugChannels[i] = new ChannelDebug
+            {
+                hasData = false,
+                r = 0, g = 0, b = 0, c = 0,
+                baseColor = "none",
+                finalColor = "none"
+            };
+        }
 
         // シリアルを開く（失敗すると例外ログが出る）
         OpenSerial();
@@ -247,13 +286,29 @@ public class ColorSensorToPlayerController : MonoBehaviour
         while (_lineQueue.TryDequeue(out var line))
         {
             Debug.Log($"[ColorSensor RAW] {line}");
+
             if (TryParseLine(line, out var s))
             {
+                // いつ受信したデータかを記録（タイムアウト判定に使う）
+                s.time = Time.time;
+
+                // ch範囲内だけ更新
                 if (s.ch >= 0 && s.ch < _latest.Length)
                 {
-                    // いつ受信したデータかを記録（タイムアウト判定に使う）
-                    s.time = Time.time;
                     _latest[s.ch] = s;
+                }
+
+                // HUD向けデバッグ情報も「生値だけ先に」更新しておく
+                // ※maxChannels<4のときも DebugChannels は4要素あるので、範囲チェックする
+                if (s.ch >= 0 && s.ch < DebugChannels.Length)
+                {
+                    DebugChannels[s.ch] = new ChannelDebug
+                    {
+                        hasData = true,
+                        r = s.r, g = s.g, b = s.b, c = s.c,
+                        baseColor = DebugChannels[s.ch].baseColor,   // 後で上書きする
+                        finalColor = DebugChannels[s.ch].finalColor  // 後で上書きする
+                    };
                 }
             }
         }
@@ -265,7 +320,18 @@ public class ColorSensorToPlayerController : MonoBehaviour
         //
         BaseColor[] baseColors = new BaseColor[_latest.Length];
         for (int ch = 0; ch < _latest.Length; ch++)
+        {
             baseColors[ch] = JudgeBaseColor(_latest[ch]);
+
+            // HUD向け：単色判定（base）を埋める
+            if (ch >= 0 && ch < DebugChannels.Length)
+            {
+                var d = DebugChannels[ch];
+                d.hasData = d.hasData || (_latest[ch].time > 0);
+                d.baseColor = BaseColorToName(baseColors[ch]);
+                DebugChannels[ch] = d;
+            }
+        }
 
         // -------- 3) 複数chの結果から最終色(index)を決定 --------
         //
@@ -277,6 +343,27 @@ public class ColorSensorToPlayerController : MonoBehaviour
         // 何も判定できなければ -1
         //
         int decided = DecideMixedIndex(baseColors);
+
+        // HUD向け：最終判定（final）を全chに入れる
+        string finalName = IndexToName(decided);
+        for (int ch = 0; ch < DebugChannels.Length; ch++)
+        {
+            var d = DebugChannels[ch];
+
+            // maxChannelsより外のchは「常にnone」にしておく（HUDが4ch固定表示でも破綻しない）
+            if (ch >= _latest.Length)
+            {
+                d.hasData = false;
+                d.r = d.g = d.b = d.c = 0;
+                d.baseColor = "none";
+                d.finalColor = "none";
+                DebugChannels[ch] = d;
+                continue;
+            }
+
+            d.finalColor = finalName;
+            DebugChannels[ch] = d;
+        }
 
         // -------- 4) 安定化（連続stableFramesで確定） --------
         //
@@ -310,7 +397,7 @@ public class ColorSensorToPlayerController : MonoBehaviour
 
             _lastAppliedIndex = decided;
             _lastApplyMs = now;
-            Debug.Log($"[ColorSensor] Applied attackColor={decided}");
+            Debug.Log($"[ColorSensor] Applied attackColor={decided} ({finalName})");
         }
     }
 
@@ -319,7 +406,10 @@ public class ColorSensorToPlayerController : MonoBehaviour
     // =========================
     //
     // 1ch分の RGB を見て red / blue / yellow / none のどれかにする
-    // 「明るさの影響」を減らすため、rgbを sum で割って正規化している
+    //
+    // ここでは 2種類の判定方法を持つ:
+    //  - HSV(Hue)ベース（useHSVClassification = true）
+    //  - 旧方式：RGB比率しきい値ベース（useHSVClassification = false）
     //
     private BaseColor JudgeBaseColor(Sample s)
     {
@@ -333,27 +423,15 @@ public class ColorSensorToPlayerController : MonoBehaviour
         // 暗すぎるなら無効
         if (s.c < minClear) return BaseColor.None;
 
-        // ----- 正規化 -----
-        // 明るさが変わっても判定が崩れにくいよう
-        // r,g,b を (r+g+b) で割って割合にする
-        float sum = (float)(s.r + s.g + s.b) + 1f; // 0除算防止で+1
-        float rn = s.r / sum;
-        float gn = s.g / sum;
-        float bn = s.b / sum;
+        // 黄色を先に取る（R>100 を満たす黄色が赤に化けるのを防ぐ）
+        if (s.r >= rawYellowRMin && s.g >= rawYellowGMin) return BaseColor.Yellow;
 
-        // ----- red判定 -----
-        // Rが十分強く、G/Bが弱い
-        if (rn >= redDominantMin && gn < 0.30f && bn < 0.30f) return BaseColor.Red;
+        // 次に青
+        if (s.b >= rawBlueMin) return BaseColor.Blue;
 
-        // ----- blue判定 -----
-        // Bが十分強く、R/Gが弱い
-        if (bn >= blueDominantMin && rn < 0.35f && gn < 0.35f) return BaseColor.Blue;
+        // 最後に赤
+        if (s.r >= rawRedMin) return BaseColor.Red;
 
-        // ----- yellow判定 -----
-        // 黄色は “RとGが両方強く、Bが弱い” という特徴で拾う
-        if (rn >= yellowRGMin && gn >= yellowRGMin && bn <= yellowBMax) return BaseColor.Yellow;
-
-        // どれにも当てはまらないなら none
         return BaseColor.None;
     }
 
@@ -406,41 +484,69 @@ public class ColorSensorToPlayerController : MonoBehaviour
     //
     // "ch,r,g,b,c" を int にする
     //
-// CSVパース（互換対応）
-// - "ch,r,g,b,c"   (5要素)  -> 通常
-// - "r,g,b,c"      (4要素)  -> ch=0 として扱う（単一センサ運用）
-// 例: "222,250,45,79" -> ch=0, r=222, g=250, b=45, c=79
+    // CSVパース（互換対応）
+    // - "ch,r,g,b,c"   (5要素)  -> 通常
+    // - "r,g,b,c"      (4要素)  -> ch=0 として扱う（単一センサ運用）
+    // 例: "222,250,45,79" -> ch=0, r=222, g=250, b=45, c=79
+    //
     private static bool TryParseLine(string line, out Sample s)
     {
-    s = default;
+        s = default;
 
-    var parts = line.Split(',');
-    if (parts.Length == 5)
-    {
-        if (!TryInt(parts[0], out s.ch)) return false;
-        if (!TryInt(parts[1], out s.r)) return false;
-        if (!TryInt(parts[2], out s.g)) return false;
-        if (!TryInt(parts[3], out s.b)) return false;
-        if (!TryInt(parts[4], out s.c)) return false;
-        return true;
-    }
-    else if (parts.Length == 4)
-    {
-        // ch無しのときは ch=0 に固定
-        s.ch = 0;
-        if (!TryInt(parts[0], out s.r)) return false;
-        if (!TryInt(parts[1], out s.g)) return false;
-        if (!TryInt(parts[2], out s.b)) return false;
-        if (!TryInt(parts[3], out s.c)) return false;
-        return true;
-    }
+        var parts = line.Split(',');
+        if (parts.Length == 5)
+        {
+            if (!TryInt(parts[0], out s.ch)) return false;
+            if (!TryInt(parts[1], out s.r)) return false;
+            if (!TryInt(parts[2], out s.g)) return false;
+            if (!TryInt(parts[3], out s.b)) return false;
+            if (!TryInt(parts[4], out s.c)) return false;
+            return true;
+        }
+        else if (parts.Length == 4)
+        {
+            // ch無しのときは ch=0 に固定
+            s.ch = 0;
+            if (!TryInt(parts[0], out s.r)) return false;
+            if (!TryInt(parts[1], out s.g)) return false;
+            if (!TryInt(parts[2], out s.b)) return false;
+            if (!TryInt(parts[3], out s.c)) return false;
+            return true;
+        }
 
-    return false;
+        return false;
     }
-
 
     private static bool TryInt(string str, out int v)
         => int.TryParse(str.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out v);
+
+    // =========================
+    // 文字列変換（HUD用・ログ用）
+    // =========================
+    private static string BaseColorToName(BaseColor bc)
+    {
+        switch (bc)
+        {
+            case BaseColor.Red: return "red";
+            case BaseColor.Blue: return "blue";
+            case BaseColor.Yellow: return "yellow";
+            default: return "none";
+        }
+    }
+
+    private static string IndexToName(int idx)
+    {
+        switch (idx)
+        {
+            case 0: return "red";
+            case 1: return "blue";
+            case 2: return "yellow";
+            case 3: return "purple";
+            case 4: return "orange";
+            case 5: return "green";
+            default: return "none";
+        }
+    }
 
     // =========================
     // 終了処理：スレッドとシリアルをちゃんと閉じる
