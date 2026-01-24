@@ -27,7 +27,7 @@ public class PlayerController : MonoBehaviour
         attackColor = -1;
         hp = _maxHp;
         UpdateHpUI();
-        UpdateHpColorUI();
+        UpdateColorUI();
         UpdateScoreUI();
     }
 
@@ -35,7 +35,8 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         SetAttackColor();
-        UpdateHpColorUI();
+        UpdateHpUI();
+        UpdateColorUI();
         UpdateScoreUI();
     }
 
@@ -44,8 +45,18 @@ public class PlayerController : MonoBehaviour
         if (other.tag == "Enemy")
         {
             Destroy(other.gameObject);
+            ResetAttackColor();
             TakeDamage(1);
         }
+    }
+
+    public void TakeDamage(int damage)
+    {
+        hp -= damage;
+        if(hp < 0) hp = 0;
+        if(hp > _maxHp) hp = _maxHp;
+        UpdateHpUI();
+
     }
 
     public void AddScorePoints(int points)
@@ -63,7 +74,7 @@ public class PlayerController : MonoBehaviour
     attackColor = idx;
     }
 
-    public void RsetAttackColor()
+    public void ResetAttackColor()
     {
         attackColor = -1;
     }
@@ -99,20 +110,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void TakeDamage(int damage)
-    {
-        hp -= damage;
-        if(hp < 0) hp = 0;
-        UpdateHpUI();
-
-    }
-
     private void UpdateHpUI()
     {
         _hpText.text = $"HP: {hp}";
     }
 
-    private void UpdateHpColorUI()
+    private void UpdateColorUI()
     {
         if(attackColor >= 0 && attackColor < _colorList.Count)
         {

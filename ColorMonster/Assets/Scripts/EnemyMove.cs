@@ -42,9 +42,9 @@ public class EnemyMove : MonoBehaviour
 
 
         //通り越したらばいばい
-        if (transform.position.z < target.position.z)
+        /*if (transform.position.z < target.position.z)
         {
             Destroy(gameObject);
-        }
+        }*/
     }
 }
