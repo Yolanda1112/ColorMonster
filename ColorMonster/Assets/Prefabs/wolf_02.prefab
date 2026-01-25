@@ -1344,9 +1344,10 @@ GameObject:
   - component: {fileID: 5480392}
   - component: {fileID: 114000011980198796}
   - component: {fileID: 2017261648632933788}
+  - component: {fileID: -1578912982417020737}
   m_Layer: 0
   m_Name: wolf_02
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1466,6 +1467,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 5
+--- !u!114 &-1578912982417020737
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 180470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b8be17e78df0a048892618aadf032a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _damage: 0
+  _scorePoints: 100
+  _enemyColor: orange
 --- !u!1 &193348
 GameObject:
   m_ObjectHideFlags: 0

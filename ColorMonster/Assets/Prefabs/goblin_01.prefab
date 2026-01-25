@@ -25654,9 +25654,10 @@ GameObject:
   - component: {fileID: 13593012}
   - component: {fileID: 5493012}
   - component: {fileID: -2932152212318108220}
+  - component: {fileID: 7340382618392794604}
   m_Layer: 0
   m_Name: goblin_01
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -25763,3 +25764,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 4
+--- !u!114 &7340382618392794604
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 193048}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b8be17e78df0a048892618aadf032a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _damage: 0
+  _scorePoints: 100
+  _enemyColor: green

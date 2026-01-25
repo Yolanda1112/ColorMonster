@@ -50207,9 +50207,10 @@ GameObject:
   - component: {fileID: 5465622}
   - component: {fileID: 114000012919263394}
   - component: {fileID: 684737250632638992}
+  - component: {fileID: -8519352039956959100}
   m_Layer: 0
   m_Name: Hobgoblin_002
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -50334,3 +50335,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 3
+--- !u!114 &-8519352039956959100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b8be17e78df0a048892618aadf032a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _damage: 0
+  _scorePoints: 100
+  _enemyColor: blue

@@ -24028,9 +24028,10 @@ GameObject:
   - component: {fileID: 5496424}
   - component: {fileID: 114000012851641798}
   - component: {fileID: 3888600534112155127}
+  - component: {fileID: 9172308466810006109}
   m_Layer: 0
   m_Name: troll_02_01
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -24153,6 +24154,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 2
+--- !u!114 &9172308466810006109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 196320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b8be17e78df0a048892618aadf032a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _damage: 0
+  _scorePoints: 100
+  _enemyColor: red
 --- !u!1 &196322
 GameObject:
   m_ObjectHideFlags: 0
