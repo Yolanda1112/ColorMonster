@@ -29,6 +29,7 @@ public class EnemyController : MonoBehaviour
         if (IsSameColor())
         {
             Destroy(this.gameObject);
+            AudioManager.Instance.PlayAttackSuccessSE();
             player.ResetAttackColor();
             player.AddScorePoints(_scorePoints);
             player.TakeDamage(_damage);

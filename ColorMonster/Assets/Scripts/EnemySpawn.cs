@@ -16,6 +16,9 @@ public class EnemySpawn : MonoBehaviour
     private GameObject currentEnemy; // 現在存在する敵
     private bool isWaiting;           // スポーン待機中かどうか
 
+    private bool _isSpawning = true; 
+    private Coroutine _spawnCoroutine = null; 
+
     void Start()
     {
         isWaiting = false;
@@ -24,11 +27,28 @@ public class EnemySpawn : MonoBehaviour
 
     void Update()
     {
+        if (!_isSpawning) return; 
+
         // 現在敵がいなく、かつ待機中でなければ次の敵をスポーン
         if (currentEnemy == null && !isWaiting)
         {
-            StartCoroutine(SpawnAfterDelay(_spawnTime));
+            _spawnCoroutine = StartCoroutine(SpawnAfterDelay(_spawnTime)); 
         }
+    }
+
+    //ゲームオーバー後に敵のスポーンを停止
+    public void StopSpawning()
+    {
+        _isSpawning = false;
+
+        // 待機中のコルーチンがあれば止める
+        if (_spawnCoroutine != null)
+        {
+            StopCoroutine(_spawnCoroutine);
+            _spawnCoroutine = null;
+        }
+
+        isWaiting = false;
     }
 
     // スポーン間隔を徐々に短くする（10%ずつ）
@@ -40,6 +60,8 @@ public class EnemySpawn : MonoBehaviour
     // 敵を1体ランダムに生成
     private void Spawn()
     {
+        if (!_isSpawning) return;
+
         if (_enemyPrefab.Count == 0)
         {
             Debug.LogWarning("Enemy Prefab がリストに登録されていません！");
@@ -59,8 +81,15 @@ public class EnemySpawn : MonoBehaviour
     {
         isWaiting = true;
         yield return new WaitForSeconds(spawnTime);
-        Spawn();
-        SetSpawnTime();
+
+        // 待ってる間に停止された可能性があるのでチェック
+        if (_isSpawning)
+        {
+            Spawn();
+            SetSpawnTime();
+        }
+
         isWaiting = false;
+        _spawnCoroutine = null;
     }
 }
